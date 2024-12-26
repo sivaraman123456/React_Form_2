@@ -1,18 +1,88 @@
+import { useActionState } from "react";
+import {
+  isEmail,
+  isEqualToOtherValue,
+  isNotEmpty,
+  hasMinLength,
+} from "../util/validation";
+
 export default function Signup() {
+  function singupAction(prevData, formData) {
+    const email = formData.get("email");
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirm-password");
+    const firstName = formData.get("first-name");
+    const lastName = formData.get("last-name");
+    const role = formData.get("role");
+    const terms = formData.get("terms");
+    const acquisition = formData.getAll("acquisition");
+
+    const error = [];
+    if (!isEmail(email)) {
+      error.push("Enter the valid email");
+    }
+    if (!isNotEmpty(password) || !hasMinLength(password, 6)) {
+      error.push("You must provide a password with at least 6 character");
+    }
+    if (!isEqualToOtherValue(password, confirmPassword)) {
+      error.push("The password don't match");
+    }
+    if (!isNotEmpty(firstName) || !isNotEmpty(lastName)) {
+      error.push("Please provide your first and last name");
+    }
+    if (!isNotEmpty(role)) {
+      error.push("Enter the role");
+    }
+    if (!terms) {
+      error.push("select the terms and conditions");
+    }
+    if (acquisition.length === 0) {
+      error.push("Please enter the at least one acquisition");
+    }
+
+    if (error.length > 0) {
+      return {
+        error,
+        enteredValue: {
+          email,
+          password,
+          confirmPassword,
+          firstName,
+          lastName,
+          role,
+          terms,
+          acquisition,
+        },
+      };
+    }
+    return { error: null };
+  }
+
+  const [formState, formAction] = useActionState(singupAction, { error: null });
   return (
-    <form>
+    <form action={formAction}>
       <h2>Welcome on board!</h2>
       <p>We just need a little bit of data from you to get you started 🚀</p>
 
       <div className="control">
         <label htmlFor="email">Email</label>
-        <input id="email" type="email" name="email" />
+        <input
+          id="email"
+          type="email"
+          name="email"
+          defaultValue={formState.enteredValue?.email}
+        />
       </div>
 
       <div className="control-row">
         <div className="control">
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" name="password" />
+          <input
+            id="password"
+            type="password"
+            name="password"
+            defaultValue={formState.enteredValue?.password}
+          />
         </div>
 
         <div className="control">
@@ -21,6 +91,7 @@ export default function Signup() {
             id="confirm-password"
             type="password"
             name="confirm-password"
+            defaultValue={formState.enteredValue?.confirmPassword}
           />
         </div>
       </div>
@@ -30,18 +101,32 @@ export default function Signup() {
       <div className="control-row">
         <div className="control">
           <label htmlFor="first-name">First Name</label>
-          <input type="text" id="first-name" name="first-name" />
+          <input
+            type="text"
+            id="first-name"
+            name="first-name"
+            defaultValue={formState.enteredValue?.firstName}
+          />
         </div>
 
         <div className="control">
           <label htmlFor="last-name">Last Name</label>
-          <input type="text" id="last-name" name="last-name" />
+          <input
+            type="text"
+            id="last-name"
+            name="last-name"
+            defaultValue={formState.enteredValue?.lastName}
+          />
         </div>
       </div>
 
       <div className="control">
         <label htmlFor="phone">What best describes your role?</label>
-        <select id="role" name="role">
+        <select
+          id="role"
+          name="role"
+          defaultValue={formState.enteredValue?.role}
+        >
           <option value="student">Student</option>
           <option value="teacher">Teacher</option>
           <option value="employee">Employee</option>
@@ -58,6 +143,9 @@ export default function Signup() {
             id="google"
             name="acquisition"
             value="google"
+            defaultChecked={formState.enteredValue?.acquisition.includes(
+              "google"
+            )}
           />
           <label htmlFor="google">Google</label>
         </div>
@@ -68,12 +156,23 @@ export default function Signup() {
             id="friend"
             name="acquisition"
             value="friend"
+            defaultChecked={formState.enteredValue?.acquisition.includes(
+              "friend"
+            )}
           />
           <label htmlFor="friend">Referred by friend</label>
         </div>
 
         <div className="control">
-          <input type="checkbox" id="other" name="acquisition" value="other" />
+          <input
+            type="checkbox"
+            id="other"
+            name="acquisition"
+            value="other"
+            defaultChecked={formState.enteredValue?.acquisition.includes(
+              "other"
+            )}
+          />
           <label htmlFor="other">Other</label>
         </div>
       </fieldset>
@@ -84,7 +183,13 @@ export default function Signup() {
           agree to the terms and conditions
         </label>
       </div>
-
+      {formState.error && (
+        <ul className="error">
+          {formState.error.map((error) => {
+            return <li key={error}>{error}</li>;
+          })}
+        </ul>
+      )}
       <p className="form-actions">
         <button type="reset" className="button button-flat">
           Reset
